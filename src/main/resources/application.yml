@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: cloudservice
+  datasource:
+    url: jdbc:sqlite:resources/database.db
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLiteDialect
