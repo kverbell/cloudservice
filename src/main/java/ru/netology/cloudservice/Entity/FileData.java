@@ -4,27 +4,23 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
 @Entity
 @Table(name = "file_data")
+@Getter
+@Setter
 public class FileData {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String filename;
+    @Column(name = "file_name", nullable = false)
+    private String fileName;
 
-    @Column(nullable = false)
-    private long size;
+    @Lob
+    @Column(name = "file_content", nullable = false)
+    private byte[] fileContent;
 
-    @Column(nullable = false)
-    private String path;
-
-    @Column(nullable = false)
-    private LocalDateTime uploadDate;
-
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }
