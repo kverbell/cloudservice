@@ -1,8 +1,11 @@
+file:
+  upload-dir: src/main/resources/uploads
+
 spring:
   application:
     name: cloudservice
   datasource:
-    url: jdbc:sqlite:resources/database.db
+    url: jdbc:sqlite:src/main/resources/database.db
     driver-class-name: org.sqlite.JDBC
   jpa:
     hibernate:
