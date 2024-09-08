@@ -5,6 +5,7 @@ import ru.netology.cloudservice.Repositories.UserRepository;
 import ru.netology.cloudservice.Configuration.TokenProvider;
 
 import org.springframework.stereotype.Service;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -18,10 +19,11 @@ public class AuthService {
         this.tokenProvider = tokenProvider;
     }
 
-    public String login(String username, String password) {
+    public Map<String, String> login(String username, String password) {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isPresent() && password.equals(userOpt.get().getPassword())) {
-            return tokenProvider.createToken(username);
+            String token = tokenProvider.createToken(username);
+            return Map.of("auth-token", token);
         }
         throw new RuntimeException("Неверное имя пользователя или пароль");
     }
