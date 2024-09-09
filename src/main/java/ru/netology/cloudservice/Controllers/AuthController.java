@@ -1,5 +1,6 @@
 package ru.netology.cloudservice.Controllers;
 
+import org.springframework.http.HttpStatus;
 import ru.netology.cloudservice.Exceptions.UnauthorizedException;
 import ru.netology.cloudservice.Services.AuthService;
 
@@ -21,20 +22,23 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest loginRequest) {
         try {
-            Map<String, String> response = authService.login(loginRequest.getUsername(), loginRequest.getPassword());
+            Map<String, String> response = authService.login(loginRequest.getLogin(), loginRequest.getPassword());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            throw new UnauthorizedException("Invalid credentials");
+            throw new UnauthorizedException("Неверные учетные данные");
         }
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader("auth-token") String token) {
+    public ResponseEntity<String> logout(@RequestHeader(value = "auth-token", defaultValue = "") String token) {
         try {
+            if (token.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Требуется токен аутентификации");
+            }
             authService.logout(token);
-            return ResponseEntity.ok("Logged out successfully");
+            return ResponseEntity.ok("Выход из системы");
         } catch (RuntimeException e) {
-            throw new UnauthorizedException("Invalid token");
+            throw new UnauthorizedException("Неверный токен");
         }
     }
 }

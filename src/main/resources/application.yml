@@ -2,7 +2,7 @@ file:
   upload-dir: src/main/resources/uploads
 
 server:
-  port: 8081
+  port: 8080
 
 spring:
   application:
@@ -16,3 +16,6 @@ spring:
     properties:
       hibernate:
         dialect: ru.netology.cloudservice.CustomSqliteDialect.SQLiteDialect
+logging:
+  level:
+    org.springframework.security: DEBUG

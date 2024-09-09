@@ -42,7 +42,6 @@ import org.hibernate.exception.spi.ViolatedConstraintNameExtractor;
 import org.hibernate.internal.util.JdbcExceptionHelper;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.UniqueKey;
-import org.hibernate.query.SemanticException;
 import org.hibernate.query.sqm.IntervalType;
 import org.hibernate.dialect.NullOrdering;
 import org.hibernate.query.sqm.TemporalUnit;
@@ -240,7 +239,7 @@ public class SQLiteDialect extends Dialect {
                 extractField( pattern, EPOCH, unit );
                 break;
             default:
-                throw new SemanticException( "unrecognized field: " + unit );
+                throw new IllegalArgumentException("Unrecognized field: " + unit);
         }
         return pattern.toString();
     }
@@ -554,10 +553,10 @@ public class SQLiteDialect extends Dialect {
         return ScrollMode.FORWARD_ONLY;
     }
 
-    @Override
-    public String getNoColumnsInsertString() {
-        return "default values";
-    }
+//    @Override
+//    public String getNoColumnsInsertString() {
+//        return "DEFAULT VALUES";
+//    }
 
     @Override
     public NationalizationSupport getNationalizationSupport() {

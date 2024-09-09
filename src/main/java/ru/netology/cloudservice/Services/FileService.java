@@ -1,10 +1,11 @@
 package ru.netology.cloudservice.Services;
 
-import org.springframework.stereotype.Service;
 import ru.netology.cloudservice.Entity.FileData;
 import ru.netology.cloudservice.Entity.User;
 import ru.netology.cloudservice.Repositories.FileDataRepository;
 import ru.netology.cloudservice.Repositories.UserRepository;
+
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,11 +26,7 @@ public class FileService {
     }
 
     public void addFile(String fileName, byte[] fileContent, Long userId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty()) {
-            throw new RuntimeException("Пользователь не найден");
-        }
-        User user = userOpt.get();
+        User user = getUserById(userId);
 
         Optional<FileData> existingFileOpt = fileDataRepository.findByFileNameAndUserId(fileName, userId);
         if (existingFileOpt.isPresent()) {
@@ -44,26 +41,24 @@ public class FileService {
     }
 
     public void deleteFile(String fileName, Long userId) {
-        Optional<FileData> fileDataOpt = fileDataRepository.findByFileName(fileName);
-        if (fileDataOpt.isEmpty()) {
-            throw new RuntimeException("Файл не найден");
-        }
-        FileData fileData = fileDataOpt.get();
-        if (!fileData.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Для удаления файла нужно авторизоваться");
-        }
+        FileData fileData = getFileByNameAndUserId(fileName, userId);
         fileDataRepository.delete(fileData);
     }
 
     public FileData getFileByName(String fileName, Long userId) {
-        Optional<FileData> fileDataOpt = fileDataRepository.findByFileName(fileName);
+        return getFileByNameAndUserId(fileName, userId);
+    }
+
+    private FileData getFileByNameAndUserId(String fileName, Long userId) {
+        Optional<FileData> fileDataOpt = fileDataRepository.findByFileNameAndUserId(fileName, userId);
         if (fileDataOpt.isEmpty()) {
             throw new RuntimeException("Файл не найден");
         }
-        FileData fileData = fileDataOpt.get();
-        if (!fileData.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Для получения файла нужно авторизоваться");
-        }
-        return fileData;
+        return fileDataOpt.get();
+    }
+
+    private User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
     }
 }

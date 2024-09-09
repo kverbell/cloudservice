@@ -30,42 +30,45 @@ public class FileController {
     }
 
     @PostMapping
-    public ResponseEntity<String> uploadFile(@RequestHeader("auth-token") String token,
+    public ResponseEntity<String> uploadFile(@RequestHeader(value = "auth-token", defaultValue = "") String token,
                                              @RequestParam("filename") String fileName,
                                              @RequestPart("file") MultipartFile file) throws IOException {
-        Long userId = getUserIdFromToken(token);
+        Long userId = validateTokenAndGetUserId(token);
         fileService.addFile(fileName, file.getBytes(), userId);
         return ResponseEntity.ok("Файл успешно загружен");
     }
 
     @DeleteMapping
-    public ResponseEntity<String> deleteFile(@RequestHeader("auth-token") String token,
+    public ResponseEntity<String> deleteFile(@RequestHeader(value = "auth-token", defaultValue = "") String token,
                                              @RequestParam("filename") String fileName) {
-        Long userId = getUserIdFromToken(token);
+        Long userId = validateTokenAndGetUserId(token);
         fileService.deleteFile(fileName, userId);
         return ResponseEntity.ok("Файл успешно удален");
     }
 
     @GetMapping
-    public ResponseEntity<byte[]> getFile(@RequestHeader("auth-token") String token,
+    public ResponseEntity<byte[]> getFile(@RequestHeader(value = "auth-token", defaultValue = "") String token,
                                           @RequestParam("filename") String fileName) {
-        Long userId = getUserIdFromToken(token);
+        Long userId = validateTokenAndGetUserId(token);
         FileData fileData = fileService.getFileByName(fileName, userId);
         return ResponseEntity.ok(fileData.getFileContent());
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<FileData>> listFiles(@RequestHeader("auth-token") String token,
+    public ResponseEntity<List<FileData>> listFiles(@RequestHeader(value = "auth-token", defaultValue = "") String token,
                                                     @RequestParam(value = "limit", defaultValue = "10") int limit) {
-        Long userId = getUserIdFromToken(token);
+        Long userId = validateTokenAndGetUserId(token);
         List<FileData> files = fileService.getAllFiles(userId);
         return ResponseEntity.ok(files);
     }
 
-    private Long getUserIdFromToken(String token) {
+    private Long validateTokenAndGetUserId(String token) {
+        if (token.isEmpty()) {
+            throw new UnauthorizedException("Требуется токен аутентификации");
+        }
         String username = tokenProvider.getUsernameFromToken(token);
         if (username == null) {
-            throw new UnauthorizedException("Недопустимый токен");
+            throw new UnauthorizedException("Неверный токен");
         }
 
         Optional<User> userOpt = userRepository.findByUsername(username);
