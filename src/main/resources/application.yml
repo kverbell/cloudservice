@@ -1,6 +1,9 @@
 file:
   upload-dir: src/main/resources/uploads
 
+server:
+  port: 8081
+
 spring:
   application:
     name: cloudservice
@@ -12,4 +15,4 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.SQLiteDialect
+        dialect: ru.netology.cloudservice.CustomSqliteDialect.SQLiteDialect
