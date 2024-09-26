@@ -2,7 +2,6 @@ package ru.netology.cloudservice.Controllers;
 
 import ru.netology.cloudservice.Configuration.TokenProvider;
 import ru.netology.cloudservice.Entity.FileData;
-import ru.netology.cloudservice.Entity.User;
 import ru.netology.cloudservice.Exceptions.UnauthorizedException;
 import ru.netology.cloudservice.Repositories.UserRepository;
 import ru.netology.cloudservice.Services.FileService;
@@ -11,71 +10,80 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/file")
 public class FileController {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
+
     private final FileService fileService;
     private final TokenProvider tokenProvider;
-    private final UserRepository userRepository;
 
     public FileController(FileService fileService, TokenProvider tokenProvider, UserRepository userRepository) {
         this.fileService = fileService;
         this.tokenProvider = tokenProvider;
-        this.userRepository = userRepository;
     }
 
     @PostMapping
     public ResponseEntity<String> uploadFile(@RequestHeader(value = "auth-token", defaultValue = "") String token,
-                                             @RequestParam("filename") String fileName,
+                                             @RequestParam("filename") @NotNull String fileName,
                                              @RequestPart("file") MultipartFile file) throws IOException {
-        Long userId = validateTokenAndGetUserId(token);
-        fileService.addFile(fileName, file.getBytes(), userId);
+        LOGGER.debug("Upload request for file: {}", fileName);
+        String login = validateTokenAndGetLogin(token);
+        fileService.addFile(fileName, file.getBytes(), login);
+        LOGGER.debug("File {} successfully uploaded by user {}", fileName, login);
         return ResponseEntity.ok("Файл успешно загружен");
     }
 
     @DeleteMapping
     public ResponseEntity<String> deleteFile(@RequestHeader(value = "auth-token", defaultValue = "") String token,
                                              @RequestParam("filename") String fileName) {
-        Long userId = validateTokenAndGetUserId(token);
-        fileService.deleteFile(fileName, userId);
+        LOGGER.debug("Delete request for file: {}", fileName);
+        String login = validateTokenAndGetLogin(token);
+        fileService.deleteFile(fileName, login);
+        LOGGER.debug("File {} successfully deleted by user {}", fileName, login);
         return ResponseEntity.ok("Файл успешно удален");
     }
 
     @GetMapping
     public ResponseEntity<byte[]> getFile(@RequestHeader(value = "auth-token", defaultValue = "") String token,
                                           @RequestParam("filename") String fileName) {
-        Long userId = validateTokenAndGetUserId(token);
-        FileData fileData = fileService.getFileByName(fileName, userId);
+        LOGGER.debug("Download request for file: {}", fileName);
+        String login = validateTokenAndGetLogin(token);
+        FileData fileData = fileService.getFileByNameAndUserLogin(fileName, login);
+        LOGGER.debug("File {} successfully retrieved for user {}", fileName, login);
         return ResponseEntity.ok(fileData.getFileContent());
     }
 
     @GetMapping("/list")
     public ResponseEntity<List<FileData>> listFiles(@RequestHeader(value = "auth-token", defaultValue = "") String token,
                                                     @RequestParam(value = "limit", defaultValue = "10") int limit) {
-        Long userId = validateTokenAndGetUserId(token);
-        List<FileData> files = fileService.getAllFiles(userId);
+        LOGGER.debug("Listing files request with limit {}", limit);
+        String login = validateTokenAndGetLogin(token);
+        List<FileData> files = fileService.getAllFiles(login);
+        LOGGER.debug("File list successfully retrieved for user {}", login);
         return ResponseEntity.ok(files);
     }
 
-    private Long validateTokenAndGetUserId(String token) {
+    private String validateTokenAndGetLogin(String token) {
+        LOGGER.debug("Validating token {}", token);
         if (token.isEmpty()) {
+            LOGGER.warn("Token is missing");
             throw new UnauthorizedException("Требуется токен аутентификации");
         }
-        String username = tokenProvider.getUsernameFromToken(token);
-        if (username == null) {
+        String login = tokenProvider.getLoginFromToken(token);
+        if (login == null) {
+            LOGGER.warn("Invalid token: {}", token);
             throw new UnauthorizedException("Неверный токен");
         }
-
-        Optional<User> userOpt = userRepository.findByUsername(username);
-        if (userOpt.isEmpty()) {
-            throw new UnauthorizedException("Пользователь не найден");
-        }
-
-        return userOpt.get().getId();
+        LOGGER.debug("Token validated successfully, login: {}", login);
+        return login;
     }
 }

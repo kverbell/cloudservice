@@ -1,44 +1,77 @@
 package ru.netology.cloudservice.Controllers;
 
-import org.springframework.http.HttpStatus;
-import ru.netology.cloudservice.Exceptions.UnauthorizedException;
+import ru.netology.cloudservice.Exceptions.InvalidLoginException;
 import ru.netology.cloudservice.Services.AuthService;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.NonNull;
+import java.util.*;
+
+
+@CrossOrigin(origins = "http://localhost:8080")
 @RestController
-@RequestMapping("/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
-    public AuthController(AuthService authService) {
+    private final @NonNull AuthenticationManager authenticationManager;
+    private final @NonNull AuthService authService;
+
+    public AuthController(@NonNull AuthenticationManager authenticationManager, @NonNull AuthService authService) {
+        this.authenticationManager = authenticationManager;
         this.authService = authService;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest loginRequest) {
-        try {
-            Map<String, String> response = authService.login(loginRequest.getLogin(), loginRequest.getPassword());
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            throw new UnauthorizedException("Неверные учетные данные");
+    @PostMapping({"/login", "/cloud/login", "/"})
+    public ResponseEntity<Map<String, Object>> login(@NonNull @RequestBody LoginRequest loginRequest) {
+        LOGGER.debug("Получен запрос на вход: {}", loginRequest);
+
+        if (isLoginRequestInvalid(loginRequest)) {
+            LOGGER.warn("Запрос на вход недействителен: {}", loginRequest);
+            throw new InvalidLoginException("Логин или пароль не могут быть пустыми");
         }
+
+        LOGGER.info("Попытка аутентификации пользователя: {}", loginRequest.getLogin());
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(loginRequest.getLogin(), loginRequest.getPassword());
+
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        Map<String, String> responseMap = authService.login(loginRequest.getLogin(), loginRequest.getPassword());
+        String authToken = responseMap.get("auth-token");
+        LOGGER.info("Аутентификация успешна для пользователя: {}", loginRequest.getLogin());
+
+        return ResponseEntity.ok(Map.of("auth-token", authToken));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader(value = "auth-token", defaultValue = "") String token) {
-        try {
-            if (token.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Требуется токен аутентификации");
-            }
-            authService.logout(token);
-            return ResponseEntity.ok("Выход из системы");
-        } catch (RuntimeException e) {
-            throw new UnauthorizedException("Неверный токен");
+    public ResponseEntity<Void> logout(@NonNull HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token == null) {
+            LOGGER.warn("Запрос на выход не содержит токен.");
+            return ResponseEntity.badRequest().build();
         }
+        LOGGER.info("Попытка выхода с токеном: {}", token);
+        authService.logout(token);
+        LOGGER.info("Выход успешен для токена: {}", token);
+        return ResponseEntity.ok().build();
     }
+
+    private boolean isLoginRequestInvalid(LoginRequest loginRequest) {
+        return loginRequest.getLogin() == null || loginRequest.getLogin().isEmpty() ||
+                loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty();
+    }
+
 }
