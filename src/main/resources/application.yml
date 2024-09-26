@@ -2,7 +2,8 @@ file:
   upload-dir: src/main/resources/uploads
 
 server:
-  port: 8080
+  address: localhost
+  port: 8081
 
 spring:
   application:
@@ -18,4 +19,8 @@ spring:
         dialect: ru.netology.cloudservice.CustomSqliteDialect.SQLiteDialect
 logging:
   level:
-    org.springframework.security: DEBUG
+    root: INFO
+    ru.netology.cloudservice: DEBUG
+    org.springframework.security: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"

@@ -2,35 +2,79 @@ package ru.netology.cloudservice.Services;
 
 import ru.netology.cloudservice.Entity.FileData;
 import ru.netology.cloudservice.Entity.User;
+import ru.netology.cloudservice.Exceptions.FileAlreadyExistsException;
+import ru.netology.cloudservice.Exceptions.FileNotFoundException;
 import ru.netology.cloudservice.Repositories.FileDataRepository;
 import ru.netology.cloudservice.Repositories.UserRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class FileService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileService.class);
+
     private final FileDataRepository fileDataRepository;
     private final UserRepository userRepository;
+
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     public FileService(FileDataRepository fileDataRepository, UserRepository userRepository) {
         this.fileDataRepository = fileDataRepository;
         this.userRepository = userRepository;
     }
 
-    public List<FileData> getAllFiles(Long userId) {
-        return fileDataRepository.findAllByUserId(userId);
+    @PostConstruct
+    private void init() {
+        LOGGER.info("Путь для загрузки файлов: {}", uploadDir);
+        createUploadDir();
     }
 
-    public void addFile(String fileName, byte[] fileContent, Long userId) {
-        User user = getUserById(userId);
+    private void createUploadDir() {
+        if (uploadDir == null || uploadDir.isEmpty()) {
+            throw new RuntimeException("Директория для загрузки файлов не задана");
+        }
+        File directory = new File(uploadDir);
+        if (!directory.exists()) {
+            boolean created = directory.mkdirs();
+            if (!created) {
+                throw new RuntimeException("Не удалось создать директорию для загрузки файлов");
+            }
+            LOGGER.info("Директория для загрузки файлов успешно создана: {}", uploadDir);
+        } else {
+            LOGGER.info("Директория для загрузки файлов уже существует: {}", uploadDir);
+        }
+    }
 
-        Optional<FileData> existingFileOpt = fileDataRepository.findByFileNameAndUserId(fileName, userId);
+    private User getUserByLogin(String login) {
+        return userRepository.findByUsername(login)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    }
+
+    public List<FileData> getAllFiles(String login) {
+        LOGGER.info("Пользователь с логином {} запрашивает список всех файлов", login);
+        User user = getUserByLogin(login);
+        List<FileData> files = fileDataRepository.findAllByUserId(user.getId());
+        LOGGER.info("Пользователь с логином {} получил {} файлов", login, files.size());
+        return files;
+    }
+
+    public void addFile(String fileName, byte[] fileContent, String login) {
+        User user = getUserByLogin(login);
+
+        Optional<FileData> existingFileOpt = fileDataRepository.findByFileNameAndUserId(fileName, user.getId());
         if (existingFileOpt.isPresent()) {
-            throw new RuntimeException("Файл с таким именем уже существует");
+            throw new FileAlreadyExistsException("Файл с таким именем уже существует");
         }
 
         FileData fileData = new FileData();
@@ -38,27 +82,20 @@ public class FileService {
         fileData.setFileContent(fileContent);
         fileData.setUser(user);
         fileDataRepository.save(fileData);
+        LOGGER.info("Файл '{}' успешно загружен пользователем с логином {}", fileName, login);
     }
 
-    public void deleteFile(String fileName, Long userId) {
-        FileData fileData = getFileByNameAndUserId(fileName, userId);
+    public void deleteFile(String fileName, String login) {
+        FileData fileData = getFileByNameAndUserLogin(fileName, login);
         fileDataRepository.delete(fileData);
+        LOGGER.info("Файл '{}' успешно удален пользователем с логином {}", fileName, login);
     }
 
-    public FileData getFileByName(String fileName, Long userId) {
-        return getFileByNameAndUserId(fileName, userId);
+    public FileData getFileByNameAndUserLogin(String fileName, String login) {
+        LOGGER.info("Пользователь с логином {} запрашивает файл '{}'", login, fileName);
+        User user = getUserByLogin(login);
+        return fileDataRepository.findByFileNameAndUserId(fileName, user.getId())
+                .orElseThrow(() -> new FileNotFoundException("Файл не найден"));
     }
 
-    private FileData getFileByNameAndUserId(String fileName, Long userId) {
-        Optional<FileData> fileDataOpt = fileDataRepository.findByFileNameAndUserId(fileName, userId);
-        if (fileDataOpt.isEmpty()) {
-            throw new RuntimeException("Файл не найден");
-        }
-        return fileDataOpt.get();
-    }
-
-    private User getUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-    }
 }
