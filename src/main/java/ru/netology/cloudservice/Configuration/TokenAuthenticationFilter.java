@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -28,7 +26,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private final TokenProvider tokenProvider;
     private final UserRepository userRepository;
 
-    public TokenAuthenticationFilter(TokenProvider tokenProvider, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public TokenAuthenticationFilter(TokenProvider tokenProvider, UserRepository userRepository) {
         this.tokenProvider = tokenProvider;
         this.userRepository = userRepository;
     }
@@ -36,7 +34,6 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-
         LOGGER.debug("Incoming request to URI: {}", request.getRequestURI());
 
         if (request.getRequestURI().equals("/login")) {
@@ -61,14 +58,8 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 Optional<User> userOpt = userRepository.findByUsername(login);
                 if (userOpt.isPresent()) {
                     User user = userOpt.get();
-                    UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-                            user.getUsername(),
-                            user.getPassword(),
-                            new ArrayList<>()
-                    );
-
                     UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                            new UsernamePasswordAuthenticationToken(user.getUsername(), null, new ArrayList<>());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     LOGGER.debug("Set authentication context for login: {}", login);
                 } else {
@@ -94,10 +85,6 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractAuthToken(HttpServletRequest request) {
-        String authenticationToken = request.getHeader("Authorization");
-        if (authenticationToken != null && authenticationToken.startsWith("Bearer ")) {
-            return authenticationToken.substring(7);
-        }
-        return null;
+        return request.getHeader("auth-token");
     }
 }

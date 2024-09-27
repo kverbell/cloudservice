@@ -30,7 +30,7 @@ public class TokenProvider {
             LOGGER.warn("Token is null or empty");
             return false;
         }
-        token = token.replace("auth-token: ", "");
+        
         LOGGER.debug("Validating token {}", token);
         boolean isValid = tokens.containsKey(token);
         LOGGER.info("Token {} validation result: {}", token, isValid);

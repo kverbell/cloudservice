@@ -5,16 +5,12 @@ import ru.netology.cloudservice.Exceptions.InvalidLoginException;
 import ru.netology.cloudservice.Exceptions.UserNotFoundException;
 import ru.netology.cloudservice.Repositories.UserRepository;
 import ru.netology.cloudservice.Configuration.TokenProvider;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,12 +21,10 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final TokenProvider tokenProvider;
-    private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, TokenProvider tokenProvider, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, TokenProvider tokenProvider) {
         this.userRepository = userRepository;
         this.tokenProvider = tokenProvider;
-        this.passwordEncoder = passwordEncoder;
     }
 
     public Map<String, String> login(String login, String password) {
@@ -46,7 +40,7 @@ public class AuthService {
             User user = userOpt.get();
             LOGGER.debug("Пользователь найден: {}", user.getUsername());
 
-            if (passwordEncoder.matches(password, user.getPassword())) {
+            if (user.getPassword().equals(password)) {
                 String token = tokenProvider.createToken(login);
                 LOGGER.info("Аутентификация успешна для пользователя: {}", login);
                 return Map.of("auth-token", token);
@@ -62,14 +56,5 @@ public class AuthService {
 
     public void logout(String token) {
         tokenProvider.invalidateToken(token);
-    }
-
-    public UserDetails loadUserByUsername(String login) {
-        Optional<User> userOpt = userRepository.findByUsername(login);
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new ArrayList<>());
-        }
-        throw new UsernameNotFoundException("Пользователь не найден");
     }
 }

@@ -3,7 +3,6 @@ package ru.netology.cloudservice.Controllers;
 import ru.netology.cloudservice.Exceptions.InvalidLoginException;
 import ru.netology.cloudservice.Services.AuthService;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,8 +35,6 @@ public class AuthController {
         }
 
         LOGGER.info("Попытка аутентификации пользователя: {}", loginRequest.getLogin());
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(loginRequest.getLogin(), loginRequest.getPassword());
 
         Map<String, String> responseMap = authService.login(loginRequest.getLogin(), loginRequest.getPassword());
         String authToken = responseMap.get("auth-token");
@@ -48,7 +45,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@NonNull HttpServletRequest request) {
-        String token = request.getHeader("Authorization");
+        String token = request.getHeader("auth-token");
         if (token == null) {
             LOGGER.warn("Запрос на выход не содержит токен.");
             return ResponseEntity.badRequest().build();
