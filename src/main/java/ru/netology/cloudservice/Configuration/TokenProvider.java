@@ -2,6 +2,7 @@ package ru.netology.cloudservice.Configuration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -26,7 +27,7 @@ public class TokenProvider {
 
     public boolean validateToken(String token) {
         if (token == null || token.isEmpty()) {
-            LOGGER.warn("Token is null or empty"); // Изменим на warn для большей серьезности
+            LOGGER.warn("Token is null or empty");
             return false;
         }
         token = token.replace("auth-token: ", "");

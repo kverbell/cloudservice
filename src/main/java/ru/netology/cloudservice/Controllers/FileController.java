@@ -6,12 +6,13 @@ import ru.netology.cloudservice.Exceptions.UnauthorizedException;
 import ru.netology.cloudservice.Repositories.UserRepository;
 import ru.netology.cloudservice.Services.FileService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import jakarta.validation.constraints.NotNull;
 import java.io.IOException;

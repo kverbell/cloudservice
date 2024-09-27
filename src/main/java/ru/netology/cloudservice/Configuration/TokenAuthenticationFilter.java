@@ -1,10 +1,15 @@
 package ru.netology.cloudservice.Configuration;
 
+import ru.netology.cloudservice.Entity.User;
+import ru.netology.cloudservice.Repositories.UserRepository;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -12,20 +17,20 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import ru.netology.cloudservice.Services.AuthService;
-
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Optional;
 
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TokenAuthenticationFilter.class);
 
     private final TokenProvider tokenProvider;
-    private final AuthService authService;
+    private final UserRepository userRepository;
 
-    public TokenAuthenticationFilter(TokenProvider tokenProvider, AuthService authService) {
+    public TokenAuthenticationFilter(TokenProvider tokenProvider, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.tokenProvider = tokenProvider;
-        this.authService = authService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -53,8 +58,15 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 String login = tokenProvider.getLoginFromToken(token);
                 LOGGER.debug("Extracted login: {}", login);
 
-                if (authService.existsByLogin(login)) {
-                    UserDetails userDetails = authService.loadUserByUsername(login);
+                Optional<User> userOpt = userRepository.findByUsername(login);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+                            user.getUsername(),
+                            user.getPassword(),
+                            new ArrayList<>()
+                    );
+
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);

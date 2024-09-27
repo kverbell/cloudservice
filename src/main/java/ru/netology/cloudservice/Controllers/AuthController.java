@@ -14,7 +14,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import java.util.*;
 
-
 @CrossOrigin(origins = "http://localhost:8080")
 @RestController
 public class AuthController {
