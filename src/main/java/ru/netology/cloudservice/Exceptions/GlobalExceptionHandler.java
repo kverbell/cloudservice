@@ -6,6 +6,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -51,13 +54,25 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(FileNotFoundException.class)
     public ResponseEntity<String> handleFileNotFoundException(FileNotFoundException ex) {
-        LOGGER.error("File not found: {}", ex.getMessage());
+        LOGGER.error("Файл не найден: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
     @ExceptionHandler(FileAlreadyExistsException.class)
     public ResponseEntity<String> handleFileAlreadyExistsException(FileAlreadyExistsException ex) {
-        LOGGER.error("File already exists: {}", ex.getMessage());
+        LOGGER.error("Файл уже существует: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException ex, WebRequest request) {
+        LOGGER.error("Ресурс не найден: {}, Request: {}", ex.getMessage(), request.getDescription(false));
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), 404);
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<String> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        return new ResponseEntity<>("Метод не поддерживается для этого запроса", HttpStatus.METHOD_NOT_ALLOWED);
     }
 }

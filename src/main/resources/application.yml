@@ -17,10 +17,16 @@ spring:
     properties:
       hibernate:
         dialect: ru.netology.cloudservice.CustomSqliteDialect.SQLiteDialect
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 200MB
+
 logging:
   level:
     root: INFO
     ru.netology.cloudservice: DEBUG
-    org.springframework.security: TRACE
+    org.springframework.security: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"

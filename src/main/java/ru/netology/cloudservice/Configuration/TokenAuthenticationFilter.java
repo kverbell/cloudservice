@@ -34,26 +34,20 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        LOGGER.debug("Incoming request to URI: {}", request.getRequestURI());
+        LOGGER.debug("Входящий запрос на URL: {}", request.getRequestURI());
 
         if (request.getRequestURI().equals("/login")) {
-            LOGGER.debug("Login request detected, passing through filter chain.");
+            LOGGER.debug("Обнаружен запрос на вход в систему.");
             chain.doFilter(request, response);
             return;
         }
 
         String token = extractAuthToken(request);
 
-        if (token == null) {
-            LOGGER.debug("Token not found in request");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token not found in request");
-            return;
-        }
-
         try {
             if (tokenProvider.validateToken(token)) {
                 String login = tokenProvider.getLoginFromToken(token);
-                LOGGER.debug("Extracted login: {}", login);
+                LOGGER.debug("Извлечен логин: {}", login);
 
                 Optional<User> userOpt = userRepository.findByUsername(login);
                 if (userOpt.isPresent()) {
@@ -61,16 +55,16 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(user.getUsername(), null, new ArrayList<>());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                    LOGGER.debug("Set authentication context for login: {}", login);
+                    LOGGER.debug("Установлен контекст проверки подлинности для логина: {}", login);
                 } else {
-                    LOGGER.debug("User with login {} does not exist, returning 401", login);
+                    LOGGER.debug("Пользователя с логином {} не существует, возвращается 401", login);
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.getWriter().write("Неправильный логин или пароль");
                     return;
                 }
             } else {
-                LOGGER.warn("Invalid token: {}", token);
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
+                LOGGER.warn("Неверный токен: {}", token);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Неверный токен");
                 return;
             }
         } catch (Exception e) {
@@ -80,11 +74,26 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        LOGGER.debug("Passing request through filter chain after successful authentication");
+        LOGGER.debug("Передача запроса по цепочке фильтров после успешной аутентификации");
         chain.doFilter(request, response);
     }
 
     private String extractAuthToken(HttpServletRequest request) {
-        return request.getHeader("auth-token");
+        String token = request.getHeader("auth-token");
+
+        if (token != null) {
+            LOGGER.debug("Из 'auth-token' извлечен токен: {}", token);
+        } else {
+            LOGGER.warn("'auth-token' не найден");
+        }
+
+        if (token != null && token.startsWith("Bearer ")) {
+            LOGGER.debug("Из токена убран префикс 'Bearer'");
+            token = token.substring(7);
+        } else {
+            LOGGER.debug("Токен не содержит префикс 'Bearer'");
+        }
+
+        return token;
     }
 }

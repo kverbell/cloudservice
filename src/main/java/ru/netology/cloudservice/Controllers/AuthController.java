@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
+
 import java.util.*;
 
 @CrossOrigin(origins = "http://localhost:8080")
@@ -44,7 +45,16 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@NonNull HttpServletRequest request) {
+    public ResponseEntity<Void> logoutPost(@NonNull HttpServletRequest request) {
+        return handleLogout(request);
+    }
+
+    @GetMapping("/login?logout")
+    public ResponseEntity<Void> logoutGet(@NonNull HttpServletRequest request) {
+        return handleLogout(request);
+    }
+
+    private ResponseEntity<Void> handleLogout(HttpServletRequest request) {
         String token = request.getHeader("auth-token");
         if (token == null) {
             LOGGER.warn("Запрос на выход не содержит токен.");
@@ -60,5 +70,4 @@ public class AuthController {
         return loginRequest.getLogin() == null || loginRequest.getLogin().isEmpty() ||
                 loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty();
     }
-
 }

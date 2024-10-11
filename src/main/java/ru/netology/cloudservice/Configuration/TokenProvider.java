@@ -20,30 +20,30 @@ public class TokenProvider {
     public String createToken(String login) {
         String token = UUID.randomUUID().toString();
         tokens.put(token, login);
-        LOGGER.debug("Creating token for user {}", login);
-        LOGGER.debug("Token added to collection: {}", token);
+        LOGGER.debug("Создан токен для пользователя {}", login);
+        LOGGER.debug("Токен добавлен к : {}", token);
         return token;
     }
 
     public boolean validateToken(String token) {
         if (token == null || token.isEmpty()) {
-            LOGGER.warn("Token is null or empty");
+            LOGGER.warn("Токен является null или пустым");
             return false;
         }
-        
-        LOGGER.debug("Validating token {}", token);
+
+        LOGGER.debug("Валидный токен {}", token);
         boolean isValid = tokens.containsKey(token);
-        LOGGER.info("Token {} validation result: {}", token, isValid);
+        LOGGER.info("Результат проверки токена {}: {}", token, isValid);
         return isValid;
     }
 
     public String getLoginFromToken(String token) {
-        LOGGER.debug("Getting login from token {}", token);
+        LOGGER.debug("Получен логин из токена {}", token);
         return tokens.get(token);
     }
 
     public void invalidateToken(String token) {
-        LOGGER.debug("Invalidating token {}", token);
+        LOGGER.debug("Невалидный токен {}", token);
         tokens.remove(token);
     }
 }
