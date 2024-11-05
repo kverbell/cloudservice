@@ -12,11 +12,13 @@ spring:
     url: jdbc:sqlite:src/main/resources/database.db
     driver-class-name: org.sqlite.JDBC
   jpa:
+    show-sql: true
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         dialect: ru.netology.cloudservice.CustomSqliteDialect.SQLiteDialect
+        format_sql: true
   servlet:
     multipart:
       enabled: true

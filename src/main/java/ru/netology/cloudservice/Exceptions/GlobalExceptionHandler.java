@@ -75,4 +75,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
         return new ResponseEntity<>("Метод не поддерживается для этого запроса", HttpStatus.METHOD_NOT_ALLOWED);
     }
+
+    @ExceptionHandler(FileSizeExceededException.class)
+    public ResponseEntity<String> handleFileSizeExceededException(FileSizeExceededException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
 }
