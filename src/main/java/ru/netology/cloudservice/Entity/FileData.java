@@ -1,6 +1,7 @@
 package ru.netology.cloudservice.Entity;
 
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,9 +17,11 @@ public class FileData {
     @Column(name = "file_name", nullable = false)
     private String fileName;
 
-    @Lob
-    @Column(name = "file_content", nullable = false)
-    private byte[] fileContent;
+    @Column(name = "file_path", nullable = false)
+    private String filePath;
+
+    @Column(name = "file_size")
+    private long fileSize;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

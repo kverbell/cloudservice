@@ -12,23 +12,34 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(InvalidLoginException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidLoginException(InvalidLoginException ex) {
-        LOGGER.warn("Ошибка входа: {}", ex.getMessage());
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), 400);
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-    }
+    @ExceptionHandler(InvalidLoginOrPasswordException.class)
+    public ResponseEntity<FieldErrorsResponse> handleInvalidLoginOrPasswordException(InvalidLoginOrPasswordException ex) {
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex) {
-        LOGGER.warn("Пользователь не найден: {}", ex.getMessage());
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), 404);
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        List<String> emailErrors = new ArrayList<>();
+        List<String> passwordErrors = new ArrayList<>();
+
+        if ("email".equals(ex.getErrorField())) {
+            emailErrors.add("Некорректный адрес электронной почты");
+        } else if ("password".equals(ex.getErrorField())) {
+            passwordErrors.add("Неверный пароль");
+        } else if ("both".equals(ex.getErrorField())) {
+            emailErrors.add("Некорректный адрес электронной почты");
+            passwordErrors.add("Неверный пароль");
+        }
+
+        FieldErrorsResponse fieldErrorsResponse = new FieldErrorsResponse(emailErrors, passwordErrors);
+        LOGGER.debug("Ошибки для email: {}", emailErrors);
+        LOGGER.debug("Ошибки для password: {}", passwordErrors);
+
+        return new ResponseEntity<>(fieldErrorsResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(UnauthorizedException.class)

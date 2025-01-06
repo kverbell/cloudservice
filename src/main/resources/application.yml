@@ -9,15 +9,17 @@ spring:
   application:
     name: cloudservice
   datasource:
-    url: jdbc:sqlite:src/main/resources/database.db
-    driver-class-name: org.sqlite.JDBC
+    url: jdbc:postgresql://localhost:5440/cloudservice_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
   jpa:
     show-sql: true
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: ru.netology.cloudservice.CustomSqliteDialect.SQLiteDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   servlet:
     multipart:

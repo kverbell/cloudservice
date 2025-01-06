@@ -1,6 +1,6 @@
 package ru.netology.cloudservice.Controllers;
 
-import ru.netology.cloudservice.Exceptions.InvalidLoginException;
+import ru.netology.cloudservice.Exceptions.InvalidLoginOrPasswordException;
 import ru.netology.cloudservice.Services.AuthService;
 
 import org.springframework.http.ResponseEntity;
@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.HttpServletRequest;
+
 import lombok.NonNull;
 
 import java.util.*;
@@ -32,7 +33,7 @@ public class AuthController {
 
         if (isLoginRequestInvalid(loginRequest)) {
             LOGGER.warn("Запрос на вход недействителен: {}", loginRequest);
-            throw new InvalidLoginException("Логин или пароль не могут быть пустыми");
+            throw new InvalidLoginOrPasswordException("Логин или пароль не могут быть пустыми", "both");
         }
 
         LOGGER.info("Попытка аутентификации пользователя: {}", loginRequest.getLogin());

@@ -1,13 +1,13 @@
 package ru.netology.cloudservice.Controllers;
 
+import ru.netology.cloudservice.Entity.FileResponseDTO;
+import ru.netology.cloudservice.Services.FileService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.netology.cloudservice.Configuration.TokenProvider;
-import ru.netology.cloudservice.Entity.FileResponseDTO;
-import ru.netology.cloudservice.Exceptions.UnauthorizedException;
-import ru.netology.cloudservice.Services.FileService;
 
 import java.util.Collections;
 import java.util.List;
@@ -19,22 +19,21 @@ public class FileListController {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileListController.class);
 
     private final FileService fileService;
-    private final TokenProvider tokenProvider;
+    private final FileController fileController;
 
-    public FileListController(FileService fileService, TokenProvider tokenProvider) {
+    public FileListController(FileService fileService, FileController fileController) {
         this.fileService = fileService;
-        this.tokenProvider = tokenProvider;
+        this.fileController = fileController;
     }
 
     @GetMapping
     public ResponseEntity<List<FileResponseDTO>> listFiles(
-            @RequestHeader(value = "auth-token", defaultValue = "") String token,
-            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+            @RequestHeader(value = "auth-token", defaultValue = "") String token) {
 
-        logRequest("listFiles", token, null, null);
+        fileController.logRequest("listFiles", token, null, null);
 
-        String login = validateTokenAndGetLogin(sanitizeToken(token));
-        List<FileResponseDTO> files = fileService.getAllFiles(login, limit);
+        String login = fileController.validateTokenAndGetLogin(fileController.sanitizeToken(token));
+        List<FileResponseDTO> files = fileService.getAllFiles(login);
 
         if (files.isEmpty()) {
             LOGGER.info("Пользователь с логином {} не имеет загруженных файлов", login);
@@ -43,32 +42,5 @@ public class FileListController {
 
         LOGGER.debug("Список файлов получен пользователем {}", login);
         return ResponseEntity.ok(files);
-    }
-
-    private void logRequest(String methodName, String token, String fileName, Long fileSize) {
-        LOGGER.debug("Запрос к методу {}: Токен: {}, Имя файла: {}, Размер файла: {}",
-                methodName, token != null && !token.isEmpty(), fileName, fileSize);
-    }
-
-    private String sanitizeToken(String token) {
-        return token.startsWith("Bearer ") ? token.substring(7) : token;
-    }
-
-    private String validateTokenAndGetLogin(String token) {
-        LOGGER.debug("Валидный токен {}", token);
-
-        if (token.isEmpty()) {
-            LOGGER.warn("Токен отсутствует");
-            throw new UnauthorizedException("Требуется токен аутентификации");
-        }
-
-        String login = tokenProvider.getLoginFromToken(token);
-        if (login == null) {
-            LOGGER.warn("Невалидный токен: {}", token);
-            throw new UnauthorizedException("Неверный токен");
-        }
-
-        LOGGER.debug("Токен подтвержден, логин: {}", login);
-        return login;
     }
 }

@@ -1,8 +1,7 @@
 package ru.netology.cloudservice.Services;
 
 import ru.netology.cloudservice.Entity.User;
-import ru.netology.cloudservice.Exceptions.InvalidLoginException;
-import ru.netology.cloudservice.Exceptions.UserNotFoundException;
+import ru.netology.cloudservice.Exceptions.InvalidLoginOrPasswordException;
 import ru.netology.cloudservice.Repositories.UserRepository;
 import ru.netology.cloudservice.Configuration.TokenProvider;
 
@@ -28,9 +27,9 @@ public class AuthService {
     }
 
     public Map<String, String> login(String login, String password) {
-        if (login == null || password == null) {
-            LOGGER.error("Логин или пароль не могут быть null");
-            throw new InvalidLoginException("Нужно ввести логин и пароль");
+        if (login == null || password == null || login.trim().isEmpty() || password.trim().isEmpty()) {
+            LOGGER.error("Логин или пароль не могут быть null или пустыми");
+            throw new InvalidLoginOrPasswordException("Нужно ввести логин и пароль", "both");
         }
 
         LOGGER.debug("Попытка входа для пользователя: {}", login);
@@ -46,12 +45,12 @@ public class AuthService {
                 return Map.of("auth-token", token);
             } else {
                 LOGGER.warn("Неверный пароль для пользователя: {}", login);
-                throw new InvalidLoginException("Неверный логин или пароль");
+                throw new InvalidLoginOrPasswordException("Неверный пароль", "password");
             }
         }
 
         LOGGER.warn("Пользователь не найден: {}", login);
-        throw new UserNotFoundException("Пользователь не найден");
+        throw new InvalidLoginOrPasswordException("Пользователь не найден", "email");
     }
 
     public void logout(String token) {

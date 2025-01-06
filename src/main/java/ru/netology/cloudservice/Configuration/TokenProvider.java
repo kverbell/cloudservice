@@ -16,7 +16,6 @@ public class TokenProvider {
 
     private final Map<String, String> tokens = new HashMap<>();
 
-
     public String createToken(String login) {
         String token = UUID.randomUUID().toString();
         tokens.put(token, login);
