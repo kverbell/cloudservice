@@ -19,6 +19,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+//Тесты запускаются с помощью mvn clean test
 class AuthControllerTest {
 
     @Mock

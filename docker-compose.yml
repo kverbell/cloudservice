@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: cloudservice_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cloudservice_db
+      LANG: en_US.UTF-8
+    ports:
+      - "5440:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: cloudservice_app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/cloudservice_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_DRIVER-CLASS-NAME: org.postgresql.Driver
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+    restart: always
